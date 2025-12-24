@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <meta content="#000000" name="theme-color"/>
+    <meta content="yes" name="apple-mobile-web-app-capable"/>
+    <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+    <title>AudioMaster AONN</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet"/>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #050505; color: #e5e5e5; -webkit-tap-highlight-color: transparent; user-select: none; padding-bottom: 80px; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .gradient-text { background: linear-gradient(to right, #fbbf24, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .app-card { background: #111; border: 1px solid #222; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); }
+        .btn-select { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-select:active { transform: scale(0.95); }
+        .active-tab { color: #fbbf24; }
+        .active-tab span { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom Range Slider */
+        input[type="range"] { -webkit-appearance: none; background: transparent; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #fbbf24; margin-top: -8px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #333; border-radius: 2px; }
+        
+        /* Transitions */
+        .view-content { display: none; animation: fadeIn 0.3s ease-out; }
+        .view-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <header class="fixed top-0 left-0 right-0 bg-black/90 backdrop-blur-md z-50 border-b border-white/5 px-4 py-3 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-600/20">
+                <span class="material-symbols-outlined text-white text-xl">speaker</span>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold leading-none text-white">AudioMaster</h1>
+                <p class="text-[10px] text-gray-400">for <span class="text-yellow-500 font-bold">AONN</span></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-20 px-4 max-w-lg mx-auto">
+        
+        <div class="view-content active space-y-4" id="view-calculator">
+            
+            <div class="app-card p-4">
+                <label class="text-xs text-gray-500 uppercase tracking-wider font-bold mb-2 block">ชื่อโปรเจกต์ / รุ่นดอก</label>
+                <div class="relative">
+                    <input class="w-full bg-black border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-yellow-500 outline-none transition" id="driver-name" placeholder="ระบุชื่อรุ่น..." type="text"/>
+                    <span class="material-symbols-outlined absolute right-3 top-3 text-gray-600">edit</span>
+                </div>
+            </div>
+
+            <div class="app-card p-4 space-y-5">
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold mb-2 flex justify-between">ขนาดดอกลำโพง <span class="text-yellow-500" id="display-size">6.5"</span></label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="btn-6.5" onclick="setDriver(6.5)">6.5"</button>
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="btn-8" onclick="setDriver(8)">8"</button>
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="btn-10" onclick="setDriver(10)">10"</button>
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="btn-12" onclick="setDriver(12)">12"</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold mb-2 flex justify-between">ความต้านทาน <span class="text-yellow-500" id="display-ohm">4Ω</span></label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="ohm-4" onclick="setOhm(4)">4 Ω</button>
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="ohm-8" onclick="setOhm(8)">8 Ω</button>
+                        <button class="btn-select py-2 rounded-lg bg-gray-800 text-gray-400 text-sm font-bold border border-transparent" id="ohm-16" onclick="setOhm(16)">16 Ω</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold mb-2 block">สูตรตู้</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="btn-select cursor-pointer p-3 rounded-xl bg-gray-800 border border-transparent flex flex-col items-center justify-center gap-1" id="type-sealed" onclick="setType('sealed')">
+                            <span class="material-symbols-outlined text-2xl text-gray-400">graphic_eq</span>
+                            <span class="text-xs font-bold text-gray-300">ตู้ปิด (SQ)</span>
+                        </div>
+                        <div class="btn-select cursor-pointer p-3 rounded-xl bg-yellow-600/20 border border-yellow-600 flex flex-col items-center justify-center gap-1" id="type-ported" onclick="setType('ported')">
+                            <span class="material-symbols-outlined text-2xl text-yellow-500">speaker_group</span>
+                            <span class="text-xs font-bold text-yellow-500">ตู้พอร์ต (SPL)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-xs text-gray-500 uppercase font-bold">ความหนาไม้</label>
+                        <span class="text-xs font-bold text-white bg-gray-700 px-2 rounded"><span id="thickness-val">15</span> mm</span>
+                    </div>
+                    <input class="w-full" max="20" min="10" oninput="updateThickness(this.value)" step="1" type="range" value="15"/>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div class="absolute inset-0 bg-yellow-500/10 blur-xl rounded-full pointer-events-none"></div>
+                <div class="app-card p-5 relative border-yellow-600/30">
+                    <h3 class="text-yellow-500 font-bold text-lg mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined">inventory_2</span> สเปคตู้ (Box Specs)
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="bg-black/40 rounded-lg p-2 text-center border border-gray-700">
+                            <div class="text-[10px] text-gray-500">กว้าง (W)</div>
+                            <div class="text-xl font-bold text-white"><span id="res-w">0</span> <span class="text-[10px] font-normal">cm</span></div>
+                        </div>
+                        <div class="bg-black/40 rounded-lg p-2 text-center border border-gray-700">
+                            <div class="text-[10px] text-gray-500">สูง (H)</div>
+                            <div class="text-xl font-bold text-white"><span id="res-h">0</span> <span class="text-[10px] font-normal">cm</span></div>
+                        </div>
+                        <div class="bg-black/40 rounded-lg p-2 text-center border border-gray-700">
+                            <div class="text-[10px] text-gray-500">ลึก (D)</div>
+                            <div class="text-xl font-bold text-white"><span id="res-d">0</span> <span class="text-[10px] font-normal">cm</span></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="flex-1 bg-blue-900/20 rounded-lg p-3 border border-blue-500/30 flex flex-col justify-center">
+                            <div class="text-[10px] text-blue-400 mb-1">ความถี่จูน (Hz)</div>
+                            <div class="text-2xl font-bold text-blue-400" id="res-hz">65</div>
+                        </div>
+                        <div class="flex-[1.5] bg-gray-800 rounded-lg p-3 border border-gray-700">
+                            <div class="text-[10px] text-gray-400 mb-1">ท่อลม (Port) / ปริมาตร</div>
+                            <div class="text-lg font-bold text-white leading-tight" id="res-port">Ø 3" x 12cm</div>
+                            <div class="text-xs text-yellow-500 mt-1">Vol: <span id="res-vol">12</span> L</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="app-card p-4">
+                <h3 class="text-gray-300 font-bold text-sm mb-3 flex items-center gap-2 border-b border-gray-800 pb-2">
+                    <span class="material-symbols-outlined text-green-500 text-lg">carpenter</span> รายการตัดไม้
+                </h3>
+                <div class="space-y-2 text-sm" id="cut-list-container"></div>
+            </div>
+            <div class="h-8"></div>
+        </div>
+
+        <div class="view-content space-y-4" id="view-tools">
+            <div class="app-card p-5 border-l-4 border-l-blue-500">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-blue-500">electrical_services</span>
+                    <h3 class="font-bold text-lg">คำนวณ C (Crossover)</h3>
+                </div>
+                <div class="flex items-end gap-3 mb-4">
+                    <div class="flex-1">
+                        <label class="text-[10px] text-gray-500 block mb-1">จุดตัด (Hz)</label>
+                        <input class="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white font-bold text-center text-lg focus:border-blue-500 outline-none" id="xover-input" oninput="calcTools()" type="number" value="3000"/>
+                    </div>
+                    <div class="flex-1 text-center pb-2">
+                        <label class="text-[10px] text-gray-500 block mb-1">ความต้านทาน</label>
+                        <span class="text-gray-300 font-bold text-lg" id="tool-ohm-disp">4 Ω</span>
+                    </div>
+                </div>
+                <div class="bg-blue-500/10 rounded-xl p-4 text-center border border-blue-500/20">
+                    <div class="text-xs text-blue-300 mb-1">ใช้คาปาซิเตอร์ (C)</div>
+                    <div class="text-4xl font-bold text-blue-400 gradient-text"><span id="tool-cap-res">13.3</span> µF</div>
+                    <div class="text-[10px] text-gray-500 mt-2">Non-Polar 100V+</div>
+                </div>
+            </div>
+
+            <div class="app-card p-5 border-l-4 border-l-red-500">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-red-500">graphic_eq</span>
+                    <h3 class="font-bold text-lg">Tone Generator</h3>
+                </div>
+                <div class="bg-black/50 rounded-xl p-6 mb-4 flex flex-col items-center justify-center border border-gray-800">
+                    <span class="text-6xl font-bold text-white tracking-tighter" id="tone-freq-disp">60</span>
+                    <span class="text-xs text-red-500 font-bold uppercase tracking-widest mt-1">Hertz</span>
+                </div>
+                <input class="w-full mb-6" id="tone-slider" max="200" min="20" oninput="updateToneUI(this.value)" type="range" value="60"/>
+                <div class="grid grid-cols-4 gap-2">
+                    <button class="bg-gray-800 rounded-lg py-2 text-xs font-bold text-gray-400" onclick="quickTone(40)">40Hz</button>
+                    <button class="bg-gray-800 rounded-lg py-2 text-xs font-bold text-gray-400" onclick="quickTone(60)">60Hz</button>
+                    <button class="bg-gray-800 rounded-lg py-2 text-xs font-bold text-gray-400" onclick="quickTone(80)">80Hz</button>
+                    <button class="bg-red-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-red-600/30" id="btn-play" onclick="toggleTone()">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="view-content text-center py-10 space-y-6" id="view-about">
+            <div class="w-24 h-24 bg-gradient-to-tr from-yellow-600 to-yellow-800 rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-yellow-600/20 mb-4">
+                <span class="material-symbols-outlined text-6xl text-white">speaker</span>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-white">AudioMaster</h2>
+                <p class="text-sm text-gray-400">App Version 1.0.0</p>
+            </div>
+            <div class="bg-gray-900 rounded-xl p-6 mx-4 border border-gray-800">
+                <p class="text-gray-500 text-xs uppercase mb-2">จัดทำโดย</p>
+                <div class="text-xl font-bold text-white">ta TPN</div>
+                <div class="h-px w-20 bg-gray-700 mx-auto my-3"></div>
+                <p class="text-gray-500 text-xs uppercase mb-2">มอบให้แก่</p>
+                <div class="text-3xl font-black text-yellow-500 drop-shadow-lg">AONN</div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 pb-safe z-50">
+        <div class="flex justify-around items-center h-16">
+            <button class="nav-btn active-tab flex flex-col items-center justify-center w-full h-full text-gray-500" data-target="view-calculator" onclick="switchTab('calculator')">
+                <span class="material-symbols-outlined text-2xl mb-0.5">calculate</span>
+                <span class="text-[10px] font-bold">คำนวณตู้</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-gray-500" data-target="view-tools" onclick="switchTab('tools')">
+                <span class="material-symbols-outlined text-2xl mb-0.5">handyman</span>
+                <span class="text-[10px] font-bold">เครื่องมือ</span>
+            </button>
+            <button class="nav-btn flex flex-col items-center justify-center w-full h-full text-gray-500" data-target="view-about" onclick="switchTab('about')">
+                <span class="material-symbols-outlined text-2xl mb-0.5">info</span>
+                <span class="text-[10px] font-bold">เกี่ยวกับ</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // Default State
+        let state = { driver: 6.5, ohm: 4, type: 'ported', thickness: 15, freq: 60 };
+
+        // Database
+        const db = { 
+            '6.5': { 
+                'sealed': { w: 21, h: 32, d: 18, vol: 7, hz: '-', port: null }, 
+                'ported': { w: 23, h: 36, d: 24, vol: 12, hz: '68', port: 'Ø 2.5" x 4"' } 
+            }, 
+            '8': { 
+                'sealed': { w: 26, h: 38, d: 20, vol: 14, hz: '-', port: null }, 
+                'ported': { w: 28, h: 45, d: 28, vol: 24, hz: '62', port: 'Ø 3" x 5"' } 
+            }, 
+            '10': { 
+                'sealed': { w: 32, h: 42, d: 24, vol: 22, hz: '-', port: null }, 
+                'ported': { w: 34, h: 52, d: 32, vol: 38, hz: '55', port: 'Ø 4" x 6"' } 
+            }, 
+            '12': { 
+                'sealed': { w: 38, h: 48, d: 30, vol: 35, hz: '-', port: null }, 
+                'ported': { w: 42, h: 60, d: 36, vol: 55, hz: '45', port: 'Ø 5" x 8"' } 
+            } 
+        };
+
+        function render() {
+            // Update Driver Buttons
+            [6.5, 8, 10, 12].forEach(s => { 
+                const btn = document.getElementById('btn-' + s); 
+                if(btn) {
+                    const isActive = s === state.driver; 
+                    btn.className = `btn-select py-2 rounded-lg text-sm font-bold border transition ${isActive ? 'bg-yellow-600 text-white border-yellow-500 shadow-lg' : 'bg-gray-800 text-gray-400 border-transparent'}`; 
+                }
+            });
+            document.getElementById('display-size').innerText = state.driver + '"';
+
+            // Update Ohm Buttons
+            [4, 8, 16].forEach(o => { 
+                const btn = document.getElementById('ohm-' + o); 
+                const isActive = o === state.ohm; 
+                btn.className = `btn-select py-2 rounded-lg text-sm font-bold border transition ${isActive ? 'bg-yellow-600 text-white border-yellow-500 shadow-lg' : 'bg-gray-800 text-gray-400 border-transparent'}`; 
+            });
+            document.getElementById('display-ohm').innerText = state.ohm + 'Ω';
+            document.getElementById('tool-ohm-disp').innerText = state.ohm + ' Ω';
+
+            // Update Box Type Buttons
+            const sBtn = document.getElementById('type-sealed'); 
+            const pBtn = document.getElementById('type-ported');
+            
+            if(state.type === 'sealed') { 
+                sBtn.className = "btn-select cursor-pointer p-3 rounded-xl bg-blue-900/40 border border-blue-500 flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-500/20"; 
+                sBtn.querySelector('span').classList.replace('text-gray-400','text-blue-400'); 
+                sBtn.querySelectorAll('span')[1].classList.replace('text-gray-300','text-blue-400'); 
+                
+                pBtn.className = "btn-select cursor-pointer p-3 rounded-xl bg-gray-800 border border-transparent flex flex-col items-center justify-center gap-1 opacity-60"; 
+                pBtn.querySelector('span').classList.replace('text-yellow-500','text-gray-400'); 
+                pBtn.querySelectorAll('span')[1].classList.replace('text-yellow-500','text-gray-400'); 
+            } else { 
+                pBtn.className = "btn-select cursor-pointer p-3 rounded-xl bg-yellow-600/20 border border-yellow-600 flex flex-col items-center justify-center gap-1 shadow-lg shadow-yellow-500/20"; 
+                pBtn.querySelector('span').classList.replace('text-gray-400','text-yellow-500'); 
+                pBtn.querySelectorAll('span')[1].classList.replace('text-gray-400','text-yellow-500'); 
+                
+                sBtn.className = "btn-select cursor-pointer p-3 rounded-xl bg-gray-800 border border-transparent flex flex-col items-center justify-center gap-1 opacity-60"; 
+                sBtn.querySelector('span').classList.replace('text-blue-400','text-gray-400'); 
+                sBtn.querySelectorAll('span')[1].classList.replace('text-blue-400','text-gray-300'); 
+            }
+
+            // Data Display
+            const data = db[state.driver.toString()][state.type];
+            document.getElementById('res-w').innerText = data.w; 
+            document.getElementById('res-h').innerText = data.h; 
+            document.getElementById('res-d').innerText = data.d; 
+            document.getElementById('res-vol').innerText = data.vol;
+            
+            if(state.type === 'ported') { 
+                document.getElementById('res-hz').innerText = data.hz; 
+                document.getElementById('res-port').innerText = data.port; 
+                document.getElementById('res-port').parentElement.classList.remove('opacity-30'); 
+            } else { 
+                document.getElementById('res-hz').innerText = "N/A"; 
+                document.getElementById('res-port').innerText = "ตู้ปิด (Sealed)"; 
+                document.getElementById('res-port').parentElement.classList.add('opacity-30'); 
+            }
+
+            // Cut List Calc
+            const T = state.thickness / 10; // Convert to cm
+            const H = data.h; 
+            const W = data.w; 
+            const D = data.d;
+            
+            document.getElementById('cut-list-container').innerHTML = `
+                <div class="flex justify-between items-center bg-gray-800/50 p-2 rounded border border-gray-700">
+                    <span class="text-gray-300">หน้า / หลัง (2 แผ่น)</span>
+                    <span class="font-bold text-white">${W} x ${H} cm</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-800/50 p-2 rounded border border-gray-700">
+                    <span class="text-gray-300">บน / ล่าง (2 แผ่น)</span>
+                    <span class="font-bold text-white">${W} x ${(D - (2*T)).toFixed(1)} cm</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-800/50 p-2 rounded border border-gray-700">
+                    <span class="text-gray-300">ซ้าย / ขวา (2 แผ่น)</span>
+                    <span class="font-bold text-white">${(H - (2*T)).toFixed(1)} x ${(D - (2*T)).toFixed(1)} cm</span>
+                </div>
+            `;
+            
+            calcTools();
+        }
+
+        // --- Logic Functions ---
+        function setDriver(s) { state.driver = s; render(); }
+        function setOhm(o) { state.ohm = o; render(); }
+        function setType(t) { state.type = t; render(); }
+        function updateThickness(v) { state.thickness = parseInt(v); document.getElementById('thickness-val').innerText = state.thickness; render(); }
+
+        function calcTools() { 
+            const hz = parseFloat(document.getElementById('xover-input').value); 
+            if(hz > 0) { 
+                const C = 1 / (2 * Math.PI * state.ohm * hz); 
+                const uF = C * 1000000; 
+                document.getElementById('tool-cap-res').innerText = uF.toFixed(1); 
+            } 
+        }
+
+        // --- Tone Generator ---
+        let osc = null;
+        function updateToneUI(val) { 
+            state.freq = val; 
+            document.getElementById('tone-freq-disp').innerText = val; 
+            document.getElementById('tone-slider').value = val; 
+            if(osc) osc.frequency.value = val; 
+        }
+        function quickTone(val) { updateToneUI(val); }
+        
+        async function toggleTone() { 
+            const btn = document.getElementById('btn-play'); 
+            const icon = btn.querySelector('span'); 
+            if(!osc) { 
+                await Tone.start(); 
+                osc = new Tone.Oscillator(state.freq, "sine").toDestination(); 
+                osc.start(); 
+                icon.innerText = "stop"; 
+                btn.classList.add('animate-pulse'); 
+            } else { 
+                osc.stop(); 
+                osc.dispose(); 
+                osc = null; 
+                icon.innerText = "play_arrow"; 
+                btn.classList.remove('animate-pulse'); 
+            } 
+        }
+
+        // --- Tabs ---
+        function switchTab(tabName) { 
+            document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active')); 
+            document.getElementById('view-' + tabName).classList.add('active'); 
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => { 
+                btn.classList.remove('active-tab', 'text-yellow-500'); 
+                btn.classList.add('text-gray-500'); 
+            }); 
+            
+            const activeBtn = document.querySelector(`.nav-btn[data-target="view-${tabName}"]`); 
+            activeBtn.classList.add('active-tab', 'text-yellow-500'); 
+            activeBtn.classList.remove('text-gray-500'); 
+            
+            window.scrollTo(0,0); 
+        }
+
+        // Initial Render
+        render();
+    </script>
+</body>
+</html>
